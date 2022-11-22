@@ -3549,8 +3549,10 @@ class ServerRemoconCore {
               if( message.byteLength == tagLen + 4 ){
                 let tag = decoder$2.decode(message.subarray(4, 4 + tagLen ));
                 console.log('>> REQUEST tag from:',tag, this.cid  );
+               
+                if(!this.manager.authManager ) return
 
-                this.manager.authManager.getPublic(tag ).then( result=>{
+                 this.manager.authManager.getPublic(tag ).then( result=>{
                   console.log('public info', result );
                   if(result){
              
@@ -3599,6 +3601,8 @@ class ServerRemoconCore {
 
         case rt.AUTH_HMAC:
           // console.log('login inprogress.. auth_hmac')
+          if( !this.manager.authManager ) return
+          
           this.manager.authManager.verify_auth_hmac( message , this );
           return;
 
@@ -3952,7 +3956,7 @@ class Admin{
 
 class Manager {
   constructor ( authManager ) {
-
+    
     this.authManager = authManager;
     
     this.logger = new FileLogger('manager.log');
