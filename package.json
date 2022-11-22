@@ -1,6 +1,6 @@
 {
   "name": "remote-signal",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "remote signal",
   "type": "module",
   "exports": {
@@ -27,7 +27,6 @@
     "url": "https://github.com/congtrol/remote-signal/issues"
   },
   "homepage": "https://github.com/congtrol/remote-signal#readme",
-
   "dependencies": {
     "boho": "^0.0.6",
     "eventemitter3": "^4.0.7",
