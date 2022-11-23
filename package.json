@@ -1,6 +1,6 @@
 {
   "name": "remote-signal",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "remote signal",
   "type": "module",
   "browser": "./dist/remote-signal.min.js",
