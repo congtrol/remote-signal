@@ -1,2 +1,3 @@
 *.tgz
 demo_web/
+.vscode/
