@@ -3,6 +3,7 @@
   "version": "0.0.5",
   "description": "remote signal",
   "type": "module",
+  "browser": "./dist/remote-signal.min.js",
   "exports": {
     "import": "./dist/remote-signal.mjs",
     "require": "./dist/remote-signal.cjs"

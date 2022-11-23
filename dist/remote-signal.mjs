@@ -3523,7 +3523,7 @@ class ServerRemoteCore {
         break;
 
         case RemoteMsg.SUBSCRIBE_REQ:  // 2bytes tagLen
-          console.log('#####recv sub_req ', message, message.byteLength );
+          // console.log('#####recv sub_req ', message, message.byteLength )
           if( message.byteLength >= 6 ){
               let msgID = message.readUInt16BE(1); 
               let tagLen = message.readUInt16BE(3); 
