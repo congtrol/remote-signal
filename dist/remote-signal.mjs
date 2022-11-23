@@ -3060,7 +3060,7 @@ class CongRx extends Transform {
 
 }
 
-let RemoconOptions = {
+let RemoteOptions = {
     showMessage: 'none',
     showMetric: 0,
     adminChannel: null,
@@ -3119,8 +3119,8 @@ for (let c in PAYLOAD_TYPE) { PAYLOAD_TYPE[PAYLOAD_TYPE[c]] = c; }
 // MBA: buffer pack of multiple arguments.  check "meta-buffer-pack" module. 
 // MBA: when armuents includes raw Buffer( TypedArray )
 
-// remocon message pack one byte header. 
-let RemoconMsg = {
+// remote message pack one byte header. 
+let RemoteMsg = {
 
   /* 
   * 0~127dec.  reserved. for text stream.
@@ -3136,7 +3136,7 @@ let RemoconMsg = {
   // range: 0xB0~ 0xBF
   // It's Boho encryption message header.
 
-  // C. Remocon status contorl.
+  // C. Remote status contorl.
   "SERVER_READY": 0xC0,
   "CID_REQ": 0xC1, 
   "CID_ACK": 0xC2,  
@@ -3149,7 +3149,7 @@ let RemoconMsg = {
   // ~CF
 
 
-  // D. Remocon data signaling
+  // D. Remote data signaling
   "SIGNAL": 0xD0,  
   "SIGNAL_REQ": 0xD1, 
   "SIGNAL_E2E": 0xD2, 
@@ -3179,9 +3179,9 @@ let RemoconMsg = {
 
 };
 
-for (let c in RemoconMsg) { RemoconMsg[RemoconMsg[c]] = c; }
+for (let c in RemoteMsg) { RemoteMsg[RemoteMsg[c]] = c; }
 
-// console.log( RemoconMsg );
+// console.log( RemoteMsg );
 
 const Meta = {
 
@@ -3199,7 +3199,7 @@ const NB$1 = NB$2;
 const MB$1 = MB$2;
 
 
-class ServerRemoconCore {
+class ServerRemoteCore {
   constructor( socket, manager) {
 
     this.socket = socket; 
@@ -3213,7 +3213,7 @@ class ServerRemoconCore {
     this.channels = new Set();  //  sub tags
     this.memory = new Map();
     
-    this.ssid = ServerRemoconCore.getID();  // ordered index number
+    this.ssid = ServerRemoteCore.getID();  // ordered index number
     console.log('ssid', this.ssid);
     this.manager = manager;
 
@@ -3241,7 +3241,7 @@ class ServerRemoconCore {
 
   static ssid = 1;
   static getID() {
-    return ServerRemoconCore.ssid++;
+    return ServerRemoteCore.ssid++;
   }
 
 
@@ -3249,7 +3249,7 @@ class ServerRemoconCore {
   showMessageLog(message, isBinary){
     let from = this.boho.isAuthorized ? `did: ${this.did} ( ${this.cid}) ` : "";
     if(isBinary){
-      let cmdName = RemoconMsg[message[0] ]; 
+      let cmdName = RemoteMsg[message[0] ]; 
       if( !cmdName ) cmdName =  rt[message[0] ]; 
       cmdName = '[SHOW_MESSAGE][ ' + cmdName + ' ]';
       if(message.byteLength > 40 ){
@@ -3269,7 +3269,7 @@ class ServerRemoconCore {
     this.receiveMonitor();
     // this.permissionChecker()
     
-    if(RemoconOptions.showMessage === 'message') this.showMessageLog(message,isBinary);
+    if(RemoteOptions.showMessage === 'message') this.showMessageLog(message,isBinary);
    
     let cmd , decoded; 
     if( isBinary){
@@ -3290,7 +3290,7 @@ class ServerRemoconCore {
         if( decoded ){
           cmd = decoded[0];
           message = decoded;   //시그널메시지
-          // console.log('[D]', RemoconMsg[ cmd ] )
+          // console.log('[D]', RemoteMsg[ cmd ] )
         }else {
           return
         }
@@ -3312,7 +3312,7 @@ class ServerRemoconCore {
             // decoded has msg_header only. 
             message.set( decoded ,ot.ENC_488); // set decoded signal_e2e headaer.
             message = message.subarray( ot.ENC_488 ); // reset offset.
-            // console.log('[D]', RemoconMsg[ cmd ] )
+            // console.log('[D]', RemoteMsg[ cmd ] )
           }else {
             return
           }
@@ -3321,16 +3321,16 @@ class ServerRemoconCore {
       }else;
 
       switch(cmd){ 
-        case RemoconMsg.PING:
+        case RemoteMsg.PING:
           console.log('ping from:' , this.cid );
           this.pong();
           break;
 
-        case RemoconMsg.PONG:
+        case RemoteMsg.PONG:
           // console.log('<-pong')
           break;
 
-        case RemoconMsg.CID_REQ:
+        case RemoteMsg.CID_REQ:
           //값이 없는경우에만 랜덤생성후 cid_map등록, 클라이언트에 전송.
           if( !this.cid ){
             this.cid = webcrypto.getRandomValues( Buffer.alloc(3) ).toString('base64'); 
@@ -3339,14 +3339,14 @@ class ServerRemoconCore {
 
           console.log('<< SENDING CID_ACK:', this.cid);
           this.send_enc_mode( pack( 
-            MB$1('#response_cid', '8', RemoconMsg.CID_ACK ),
+            MB$1('#response_cid', '8', RemoteMsg.CID_ACK ),
             MB$1('#cid', this.cid )
             // MB('#cid', this.cid +':'+ this.ssid )
           ));
           break;
 
 
-        case RemoconMsg.ECHO : // echo back. 
+        case RemoteMsg.ECHO : // echo back. 
           // return frame without modify. 
           try {
             let msg = decoder$2.decode( message.subarray(1));
@@ -3356,13 +3356,13 @@ class ServerRemoconCore {
           }
           this.send(message, isBinary);
           break;
-        case RemoconMsg.LOOP : // loop back. 
+        case RemoteMsg.LOOP : // loop back. 
           // return only payload. useful to loopback test
           let payloadOnly = message.subarray(1);
           this.send(payloadOnly, isBinary);
           break;
 
-        case RemoconMsg.IAM : // iam
+        case RemoteMsg.IAM : // iam
           if(message.byteLength > 1){
             let iamInfo = message.subarray(1);
             this.nick = decoder$2.decode(iamInfo);  
@@ -3374,8 +3374,8 @@ class ServerRemoconCore {
 
           //시그널메시지,  채널값은 여기서 해석하여 채널브로트캐스터메니저에 전달.
           // 채널을 인자로 넘기지만, 데이타 정보는 시그널 메시지에서 헤더가 포함된 시그널 통메시지 그대로 전달됨
-        case RemoconMsg.SIGNAL_E2E :
-        case RemoconMsg.SIGNAL :
+        case RemoteMsg.SIGNAL_E2E :
+        case RemoteMsg.SIGNAL :
           if( message.byteLength >= 3 ){
 
 
@@ -3423,7 +3423,7 @@ class ServerRemoconCore {
           }
           break;
 
-        case RemoconMsg.SIGNAL_REQ :  
+        case RemoteMsg.SIGNAL_REQ :  
           if( message.byteLength >= 6 ){
 
 
@@ -3451,7 +3451,7 @@ class ServerRemoconCore {
 
 
 
-        case RemoconMsg.UNSUBSCRIBE:
+        case RemoteMsg.UNSUBSCRIBE:
           if(message.byteLength == 2 ){
             this.manager.unsubscribe([""] ,this );
           }else if( message.byteLength >= 3 ){
@@ -3467,7 +3467,7 @@ class ServerRemoconCore {
           }
         break;
 
-        case RemoconMsg.SET: 
+        case RemoteMsg.SET: 
           if( message.byteLength >= 3 ){
             let setLen = message.readUInt8(1); 
             if( message.byteLength == setLen + 2 ){
@@ -3509,7 +3509,7 @@ class ServerRemoconCore {
           }
         break;
 
-        case RemoconMsg.SUBSCRIBE: // 1byte tagLen
+        case RemoteMsg.SUBSCRIBE: // 1byte tagLen
           if( message.byteLength >= 3 ){
             let tagLen = message.readUInt8(1); 
             if( message.byteLength == tagLen + 2 ){
@@ -3522,7 +3522,7 @@ class ServerRemoconCore {
           }
         break;
 
-        case RemoconMsg.SUBSCRIBE_REQ:  // 2bytes tagLen
+        case RemoteMsg.SUBSCRIBE_REQ:  // 2bytes tagLen
           console.log('#####recv sub_req ', message, message.byteLength );
           if( message.byteLength >= 6 ){
               let msgID = message.readUInt16BE(1); 
@@ -3541,7 +3541,7 @@ class ServerRemoconCore {
           }
         break;
 
-        case RemoconMsg.REQUEST:  // 1byte tagLen
+        case RemoteMsg.REQUEST:  // 1byte tagLen
           if( message.byteLength >= 6 ){
               let msgID = message.readUInt16BE(1); 
               let tagLen = message.readUInt8(3); 
@@ -3580,7 +3580,7 @@ class ServerRemoconCore {
           }
         break;
 
-        case RemoconMsg.CLOSE:
+        case RemoteMsg.CLOSE:
           if(message.byteLength > 1){
             let reason = decoder$2.decode( message.subarray(1));  
             console.log('>> CLOSE reason:', reason );
@@ -3607,7 +3607,7 @@ class ServerRemoconCore {
           return;
 
         // Admin
-        case RemoconMsg.ADMIN:
+        case RemoteMsg.ADMIN:
           
           break;
 
@@ -3624,7 +3624,7 @@ class ServerRemoconCore {
   
   response(msgID, statusCode, metaBufferPack = new Uint8Array(0)){
       let pack = Buffer.concat( [
-        NB$1('8',RemoconMsg.RESPONSE_MBP),  
+        NB$1('8',RemoteMsg.RESPONSE_MBP),  
         NB$1('8', statusCode), 
         NB$1('16', msgID), 
         metaBufferPack
@@ -3646,7 +3646,7 @@ class ServerRemoconCore {
 
       // console.log('svr useEnc',  useEncryption, data )
 
-    if( useEncryption && data[0] == RemoconMsg.SIGNAL_E2E){
+    if( useEncryption && data[0] == RemoteMsg.SIGNAL_E2E){
       // E2E는,
       // 서버는 수신자와 암호통신하는경우, 헤더부분만 암호화 하고, 데이타 부분은 그대로 전달해야한다.
       let tagLen = data[1];
@@ -3705,7 +3705,7 @@ class ServerRemoconCore {
     // let userInfo = { "id": this.did }
     
     let pack$1 = pack( 
-      MB$1('#MsgType','8', RemoconMsg.IAM_ACK ) , 
+      MB$1('#MsgType','8', RemoteMsg.IAM_ACK ) , 
       MB$1('#info', info )
     );
 
@@ -3717,7 +3717,7 @@ class ServerRemoconCore {
 
 }
 
-class ServerRemocon extends ServerRemoconCore {
+class ServerRemote extends ServerRemoteCore {
   constructor(socket, req, manager) {
     super(socket, manager);
 
@@ -3832,7 +3832,7 @@ class ServerRemocon extends ServerRemoconCore {
       this.socket.ping();
       this.socket.txCounter++;
     }else {
-      this.send( Buffer.from( [ RemoconMsg.PING ]));
+      this.send( Buffer.from( [ RemoteMsg.PING ]));
     }
   }
 
@@ -3841,7 +3841,7 @@ class ServerRemocon extends ServerRemoconCore {
       this.socket.ping();
       this.socket.txCounter++;
     }else {
-      this.send( Buffer.from( [ RemoconMsg.PONG ]));
+      this.send( Buffer.from( [ RemoteMsg.PONG ]));
     }
   }
 
@@ -3869,7 +3869,7 @@ class ServerRemocon extends ServerRemoconCore {
         }
       }else {
         // not open 
-        console.log('소켓만 종료된상태: ServerRemocon::send(), WS not open. cid:', this.cid , message );
+        console.log('소켓만 종료된상태: ServerRemote::send(), WS not open. cid:', this.cid , message );
         // this.close() 이명령은 소켓만종료됨.  리모콘클라이언트를 제거해야함.
       }
 
@@ -3879,7 +3879,7 @@ class ServerRemocon extends ServerRemoconCore {
       if( this.socket.readyState == 'open'){
         this.socket.write( CongTxSync(message) );
       }else {
-        console.log('소켓만 종료된상태: ServerRemocon::send(), TCP socket not open: cid:' , this.cid , message );
+        console.log('소켓만 종료된상태: ServerRemote::send(), TCP socket not open: cid:' , this.cid , message );
         // this.close() 이명령은 소켓만종료됨.  리모콘클라이언트를 제거해야함.
       }
     }
@@ -3890,7 +3890,7 @@ class ServerRemocon extends ServerRemoconCore {
 
 
 process.on('uncaughtException', (err, origin) => {
-  console.log('serverRemocon::uncaughtException', err,origin);
+  console.log('serverRemote::uncaughtException', err,origin);
 });
 
 class FileLogger{
@@ -3935,7 +3935,7 @@ class Admin{
 
   }
 
-  getRemocons(){
+  getRemotes(){
     let remocons = Array.from( this.manager.remocons.keys() );
     return remocons.map( r=>{ return r.cid })
   }
@@ -3948,7 +3948,7 @@ class Admin{
     return Array.from( this.channel_map.keys() )
   }
 
-  closeRemoconByCID( cid ){
+  closeRemoteByCID( cid ){
     this.manager.cid_map.get(cid );
   }
 
@@ -3967,8 +3967,8 @@ class Manager {
     // this.privateChannelName = randomUUID().substring(0,18)
     // this.publicIPChannelBaseName = randomUUID().substring(0,13)
 
-    this.remocons = new Set(); // total ServerRemocons
-    this.channel_map = new Map();  //  key: channelName  value: < ServerRemocon : Set >
+    this.remocons = new Set(); // total ServerRemotes
+    this.channel_map = new Map();  //  key: channelName  value: < ServerRemote : Set >
     this.cid_map = new Map(); //  map:[ key:cid -> value:client ]
 
 
@@ -3999,15 +3999,15 @@ class Manager {
           }
           // console.log('P>>')
       });
-    }, RemoconOptions.pingTimeout );
+    }, RemoteOptions.pingTimeout );
 
 
     this.monitIntervalID = setInterval((e) => {
-      if ( RemoconOptions.showMetric ) {
+      if ( RemoteOptions.showMetric ) {
         this.monitor();
 
       }
-    }, RemoconOptions.monitorPeriod);
+    }, RemoteOptions.monitorPeriod);
 
   }
 
@@ -4016,10 +4016,10 @@ class Manager {
       socket.isAlive = true;
       console.log( `client type: ${ socket.isWS ? "WS" : "TCP" }`);
       this.logger.add( `client type: ${ socket.isWS ? "WS" : "TCP" }`);
-      let client =  new ServerRemocon(socket, req, this); 
+      let client =  new ServerRemote(socket, req, this); 
       this.remocons.add(client );
 
-      client.send( Buffer.from([RemoconMsg.SERVER_READY  ]) );
+      client.send( Buffer.from([RemoteMsg.SERVER_READY  ]) );
 
   };
 
@@ -4054,7 +4054,7 @@ class Manager {
       console.log(tag , result);
       return
     }else if( tag == 'sudo:remocons'){
-      let result = this.admin.getRemocons();
+      let result = this.admin.getRemotes();
       console.log(tag , result);
       return
     
@@ -4243,7 +4243,7 @@ class Manager {
     return 
 
 
-    // if( RemoconOptions.showMetric)  console.log(`total ${this.channel_map.size} channels.  time: ${util.timeStamp()} `)
+    // if( RemoteOptions.showMetric)  console.log(`total ${this.channel_map.size} channels.  time: ${util.timeStamp()} `)
   }
 
   adminChannelBroadCast(){
@@ -4253,7 +4253,7 @@ class Manager {
     list.time = Date.now();
     list.timeStamp = timeStamp();
     let adminPack = ["pub","admin", list];
-    this.sender( RemoconOptions.adminChannel, "", JSON.stringify( adminPack)  );
+    this.sender( RemoteOptions.adminChannel, "", JSON.stringify( adminPack)  );
   }
 
 
@@ -4264,7 +4264,7 @@ class Manager {
     list.time = Date.now();
     list.timeStamp = timeStamp();
     let adminPack = ["pub","admin", list];
-    this.sender( RemoconOptions.adminChannel, "", JSON.stringify( adminPack)  );
+    this.sender( RemoteOptions.adminChannel, "", JSON.stringify( adminPack)  );
   }
 
   
@@ -4366,7 +4366,7 @@ class Manager {
   //   })
 
   //   if (emptyCh.length >= 1) {
-  //     if( RemoconOptions.showMetric)  console.log('removed empty channel : ', emptyCh)
+  //     if( RemoteOptions.showMetric)  console.log('removed empty channel : ', emptyCh)
   //     emptyCh.forEach((ch) => {
   //       this.channel_map.delete(ch)
   //     })
@@ -4402,7 +4402,7 @@ class Manager {
   //   list.time = Date.now()
   //   list.timeStamp = util.timeStamp()
   //   let adminPack = ["pub","admin", list]
-  //   this.sender( RemoconOptions.adminChannel, "", JSON.stringify( adminPack)  )
+  //   this.sender( RemoteOptions.adminChannel, "", JSON.stringify( adminPack)  )
   // }
 
 
@@ -9151,16 +9151,16 @@ function abortHandshakeOrEmitwsClientError(server, req, socket, code, message) {
 
 
 */
-class RemoconServer {
+class RemoteServer {
   constructor (options, authManager ) {
     this.options = options;
     // console.log('websocket server options', options )
 
     let pingT = parseInt( options.timeout );
-    if(pingT && pingT >= 1000) RemoconOptions.pingTimeout = pingT;
+    if(pingT && pingT >= 1000) RemoteOptions.pingTimeout = pingT;
 
     let monitorT = parseInt( options.monitorPeriod );
-    if(monitorT && monitorT >= 1000) RemoconOptions.monitorPeriod = monitorT;
+    if(monitorT && monitorT >= 1000) RemoteOptions.monitorPeriod = monitorT;
     
     this.wss = new websocketServer( options );
     this.wss.setMaxListeners(0);
@@ -9193,7 +9193,7 @@ class RemoconServer {
       console.log('tcp server data:', data );
     }).on('error', (err) => {
       // throw err;
-      console.log('RemoconServer.js: tcpserver error:', err );
+      console.log('RemoteServer.js: tcpserver error:', err );
     }).listen( this.tcpPort, () => {
       console.log('server bound');
     });
@@ -9553,7 +9553,7 @@ const NB = NB$2;
 const MB = MB$2;
 const MBA = MBA$1;
 
-class RemoconCore extends eventemitter3{
+class RemoteCore extends eventemitter3{
   static BOHO = boho
   constructor( url) {
     super();
@@ -9600,7 +9600,7 @@ class RemoconCore extends eventemitter3{
   onCloseEventHandler(){
     this.isSecre = false;
     this.boho.isAuthorized = false;
-    console.log('-- remocon is closed:');
+    console.log('-- remote is closed:');
     this.isOpen = false;
   }
 
@@ -9624,8 +9624,8 @@ class RemoconCore extends eventemitter3{
   }
 
   onWrapSocketMessageEventHandler( buffer$1 ){
-    // console.log('remocon rcv socket_message', buffer )
-    //check first byte (remocon message type)
+    // console.log('remote rcv socket_message', buffer )
+    //check first byte (remote message type)
    let msgType = buffer$1[0];
    let decoded;
    
@@ -9635,7 +9635,7 @@ class RemoconCore extends eventemitter3{
        //  console.log( decoded )
         msgType = decoded[0];
         buffer$1 = decoded; 
-        // console.log('DECODED MsgType:', RemoconMsg[ msgType ] )
+        // console.log('DECODED MsgType:', RemoteMsg[ msgType ] )
        }else {
          console.log('DEC_FAIL', buffer$1.byteLength);
        }
@@ -9651,7 +9651,7 @@ class RemoconCore extends eventemitter3{
           // decoded has msg_header only. 
           buffer$1.set( decoded ,ot.ENC_488); // set decoded signal_e2e headaer.
           buffer$1 = buffer$1.subarray( ot.ENC_488 ); // reset offset.
-  // console.log('DECODED MsgType:', RemoconMsg[ msgType ] )
+  // console.log('DECODED MsgType:', RemoteMsg[ msgType ] )
           }else {
             console.log('488 DEC_FAIL', buffer$1);
             return
@@ -9666,20 +9666,20 @@ class RemoconCore extends eventemitter3{
 
      }
 
-    let type = RemoconMsg[ msgType ];
+    let type = RemoteMsg[ msgType ];
     if( !type ) type = rt[ msgType ]; 
 
 // console.log( "MsgType: ", type , " LEN ", buffer.byteLength)
 
    switch( msgType){
-      case RemoconMsg.PING :
+      case RemoteMsg.PING :
           this.pong();
       break;
 
-      case RemoconMsg.PONG :
+      case RemoteMsg.PONG :
       break;
 
-      case RemoconMsg.IAM_ACK:
+      case RemoteMsg.IAM_ACK:
           try {
             let str = new TextDecoder().decode( buffer$1.subarray(1) );
             let jsonInfo = JSON.parse(str); 
@@ -9696,7 +9696,7 @@ class RemoconCore extends eventemitter3{
         // }
       break;
 
-    case RemoconMsg.CID_ACK :
+    case RemoteMsg.CID_ACK :
       let cidStr = new TextDecoder().decode( buffer$1.subarray(1) );
       console.log( '>> CID_ACK: ' ,cidStr );
       this.cid = cidStr;
@@ -9705,19 +9705,19 @@ class RemoconCore extends eventemitter3{
 
       break;
 
-    case RemoconMsg.SERVER_READY :
+    case RemoteMsg.SERVER_READY :
       console.log('>> SERVER_READY');
       if(this.useAuth){
         this.send( this.boho.auth_req() );
         // CID_REQ will be called, after auth_ack.
       }else {
         // CID_REQ here, if not using auth.
-        this.send( buffer.Buffer.from([RemoconMsg.CID_REQ])  );
+        this.send( buffer.Buffer.from([RemoteMsg.CID_REQ])  );
       }
       break;
       
-     case RemoconMsg.SIGNAL_E2E: 
-     case RemoconMsg.SIGNAL: 
+     case RemoteMsg.SIGNAL_E2E: 
+     case RemoteMsg.SIGNAL: 
       try{
           let tagLen = buffer$1.readUint8(1);
           let tagBuf = buffer$1.subarray(2, 2 + tagLen );
@@ -9808,7 +9808,7 @@ class RemoconCore extends eventemitter3{
         break;
 
 
-     case RemoconMsg.SIGNAL_REQ: 
+     case RemoteMsg.SIGNAL_REQ: 
       try{
           let tagLen = buffer$1.readUint8(3);
           let tagBuf = buffer$1.subarray(4, 4 + tagLen );
@@ -9827,7 +9827,7 @@ class RemoconCore extends eventemitter3{
           break;
 
       
-      case RemoconMsg.RESPONSE_MBP:
+      case RemoteMsg.RESPONSE_MBP:
         let code = buffer$1.readUint8(1);
         let mid = buffer$1.readUint16BE(2);
         let meta = ( buffer$1.byteLength > 4  ) ?  buffer$1.subarray(4) : "";
@@ -9853,7 +9853,7 @@ class RemoconCore extends eventemitter3{
         if(this.boho.check_auth_ack_hmac( buffer$1 ) ){
           // console.log(" AUTH SUCCESS:  the server is verified." )
           this.emit("authorized" );   
-          this.send( buffer.Buffer.from([RemoconMsg.CID_REQ ]) );
+          this.send( buffer.Buffer.from([RemoteMsg.CID_REQ ]) );
           
         }else {
           console.log('invalid server hmac');
@@ -9868,39 +9868,39 @@ class RemoconCore extends eventemitter3{
     // console.log('iam', title)
     if(title ){
       this.send_enc_mode(  pack( 
-          MB('#MsgType','8', RemoconMsg.IAM ) , 
+          MB('#MsgType','8', RemoteMsg.IAM ) , 
           MB('#', title )
         ));
     }else {
       this.send_enc_mode(  pack( 
-          MB('#MsgType','8', RemoconMsg.IAM )
+          MB('#MsgType','8', RemoteMsg.IAM )
         ));
     }
   }
 
 
   ping(){
-    this.send( buffer.Buffer.from( [ RemoconMsg.PING ]));
+    this.send( buffer.Buffer.from( [ RemoteMsg.PING ]));
   }
 
   pong(){
-    this.send( buffer.Buffer.from( [ RemoconMsg.PONG ]));
+    this.send( buffer.Buffer.from( [ RemoteMsg.PONG ]));
   }
 
 
-  // remocon application level ping tool.  
+  // remote application level ping tool.  
   // simple message sending and reply.
   echo( args ){
 
     if(args ){
       console.log( 'echo args:', args );
       this.send_enc_mode(  pack( 
-        MB('#MsgType','8', RemoconMsg.ECHO ) , 
+        MB('#MsgType','8', RemoteMsg.ECHO ) , 
         MB('#msg', args )
       ));
     }else {
       // # do not encrypt blank echo #
-      this.send( buffer.Buffer.from([ RemoconMsg.ECHO ]));
+      this.send( buffer.Buffer.from([ RemoteMsg.ECHO ]));
     }
   }
 
@@ -9916,7 +9916,7 @@ class RemoconCore extends eventemitter3{
       !this.TLS && this.boho.isAuthorized
       )  useEncryption = true;
       
-    if( data[0] == RemoconMsg.SIGNAL_E2E && useEncryption){
+    if( data[0] == RemoteMsg.SIGNAL_E2E && useEncryption){
       // input data:  signal_header + e2ePayload
       // encrypt signal_header area only. payload is encrypted with e2e key already.
       let tagLen = data[1];
@@ -10038,14 +10038,14 @@ class RemoconCore extends eventemitter3{
     let sigPack;
     if( payload.type == PAYLOAD_TYPE.EMPTY ){
       sigPack = pack( 
-        MB('#MsgType','8', RemoconMsg.SIGNAL) , 
+        MB('#MsgType','8', RemoteMsg.SIGNAL) , 
         MB('#targetLen','8', targetEncoded.byteLength),
         MB('#target', targetEncoded),
         MB('#payloadType', '8', payload.type )
         );
     }else if( payload.type == PAYLOAD_TYPE.MBA ){
       sigPack = pack( 
-        MB('#MsgType','8', RemoconMsg.SIGNAL) , 
+        MB('#MsgType','8', RemoteMsg.SIGNAL) , 
         MB('#targetLen','8', targetEncoded.byteLength),
         MB('#target', targetEncoded),
         MB('#payloadType', '8', payload.type ),
@@ -10053,7 +10053,7 @@ class RemoconCore extends eventemitter3{
         );
     }else {
       sigPack = pack( 
-        MB('#MsgType','8', RemoconMsg.SIGNAL) , 
+        MB('#MsgType','8', RemoteMsg.SIGNAL) , 
         MB('#targetLen','8', targetEncoded.byteLength),
         MB('#target', targetEncoded),
         MB('#payloadType', '8', payload.type ),
@@ -10086,7 +10086,7 @@ class RemoconCore extends eventemitter3{
 // console.log( 'encrypt_e2e', sercretPack )
 
     let signalPack = pack( 
-      MB('#MsgType','8', RemoconMsg.SIGNAL_E2E) , 
+      MB('#MsgType','8', RemoteMsg.SIGNAL_E2E) , 
       MB('#targetLen','8', targetEncoded.byteLength),
       MB('#target', targetEncoded),
       MB('#payloadType', '8', PAYLOAD_TYPE.BUFFER ),
@@ -10104,7 +10104,7 @@ class RemoconCore extends eventemitter3{
   signal_promise(tag , ...args ){
       let sigPack = this.get_signal_pack( tag, ...args );
       let sigRetPack = pack( 
-        MB('#MsgType','8',RemoconMsg.SIGNAL_REQ) , 
+        MB('#MsgType','8',RemoteMsg.SIGNAL_REQ) , 
         MB('#mid','16',++this.mid), 
         MB('#sigPack_withoutHeader', sigPack.subarray(1))
         );
@@ -10151,7 +10151,7 @@ class RemoconCore extends eventemitter3{
 
     this.send_enc_mode( 
       buffer.Buffer.concat( [
-        NB('8',RemoconMsg.SET),  
+        NB('8',RemoteMsg.SET),  
         NB('8', targetEncoded.byteLength), 
         targetEncoded ]) );
   }
@@ -10172,7 +10172,7 @@ class RemoconCore extends eventemitter3{
 
     this.send_enc_mode( 
       buffer.Buffer.concat( [
-        NB('8',RemoconMsg.SUBSCRIBE),  
+        NB('8',RemoteMsg.SUBSCRIBE),  
         NB('8', tagEncoded.byteLength), 
         tagEncoded ]) );
   }
@@ -10186,7 +10186,7 @@ class RemoconCore extends eventemitter3{
 
     this.send_enc_mode( 
       buffer.Buffer.concat( [
-        NB('8',RemoconMsg.REQUEST),  
+        NB('8',RemoteMsg.REQUEST),  
         NB('16', ++this.mid), 
         NB('8', tagEncoded.byteLength), 
         tagEncoded ]) );
@@ -10206,7 +10206,7 @@ class RemoconCore extends eventemitter3{
 
     this.send_enc_mode( 
       buffer.Buffer.concat( [
-        NB('8',RemoconMsg.SUBSCRIBE_REQ),  
+        NB('8',RemoteMsg.SUBSCRIBE_REQ),  
         NB('16', ++this.mid), 
         NB('16', tagEncoded.byteLength), 
         tagEncoded ]) );
@@ -10250,7 +10250,7 @@ class RemoconCore extends eventemitter3{
     if( tagEncoded.byteLength > SIZE_LIMIT.TAG_LEN1 ) throw TypeError('please use tag string bytelength below:' + SIZE_LIMIT.TAG_LEN1 )
 
     this.send_enc_mode( buffer.Buffer.concat( [
-      NB('8',RemoconMsg.UNSUBSCRIBE),  
+      NB('8',RemoteMsg.UNSUBSCRIBE),  
       NB('8', tagEncoded.byteLength), 
       tagEncoded ]) );
 
@@ -10262,7 +10262,7 @@ class RemoconCore extends eventemitter3{
  
 }
 
-class RemoconTCP extends RemoconCore{
+class RemoteCongTCP extends RemoteCore{
   constructor( url  ) {
     super( url );
     this.connect();
@@ -10344,7 +10344,7 @@ class RemoconTCP extends RemoconCore{
  
 }
 
-class RemoconWS extends RemoconCore{
+class RemoteWS extends RemoteCore{
   constructor(url  ) {
     super(url);
     this.connect();
@@ -10574,4 +10574,4 @@ class AuthFile extends AuthCore{
 
 }
 
-export { AuthCore, AuthFile, ENC_MODE, Meta, PAYLOAD_TYPE, RemoconWS as Remocon, RemoconMsg, RemoconOptions, RemoconServer, RemoconTCP, SIZE_LIMIT, TCP_PORT, WS_PORT, o as sha256, timeStamp };
+export { AuthCore, AuthFile, ENC_MODE, Meta, PAYLOAD_TYPE, RemoteWS as Remote, RemoteCongTCP, RemoteMsg, RemoteOptions, RemoteServer, SIZE_LIMIT, TCP_PORT, WS_PORT, o as sha256, timeStamp };
