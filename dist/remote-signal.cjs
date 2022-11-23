@@ -10606,4 +10606,5 @@ exports.RemoconTCP = RemoconTCP;
 exports.SIZE_LIMIT = SIZE_LIMIT;
 exports.TCP_PORT = TCP_PORT;
 exports.WS_PORT = WS_PORT;
+exports.sha256 = o;
 exports.timeStamp = timeStamp;

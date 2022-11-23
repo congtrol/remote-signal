@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DEVICE HOME</title>
+<style>
+  body{
+    background-color: #fff300;
+  }
+  .keyView{
+    font-size: 3em;
+  }
+</style>
+</head>
+<body>
+  <p>device type: odroid-go</p>
+  <section>
+  <div>device cid:<span id="deviceCID">NOP</span></div>
+</section>
+<div id="keyEvent" class="keyView">..</div>
+  <!-- <button id="searchBtn">#SEARCH</button> -->
+  <button id="setCIDBtn">set_reply_cid</button>
+</body>
+<script src="../remocon.min.js?v=2"></script>
+
+<script>
+let originURL = document.location.origin
+
+window.addEventListener('DOMContentLoaded', (event) => {
+    console.log('DOM fully loaded and parsed');
+    window.top.postMessage( {type: "view_ready" }, originURL )
+});
+
+
+window.addEventListener("message", (event) => {
+  
+  if (event.origin !== originURL ) return;
+
+  let data = event.data;
+  console.log('iframe recv message from main:', data )
+
+  if( data.type === 'auth'){
+    authRemoconDevice( data.wsURL, data.did, data.dkey  )
+    deviceCID.textContent = data.device_cid
+    remoteCID = data.device_cid
+    console.log('get auth info from top')
+  }else{
+    event.source.postMessage("Unkown data type:" +  data.type , event.origin);
+  }
+
+
+});
+
+
+  // searchBtn.addEventListener('click', e=>{
+  //   console.log('view click searchBtn')
+  //   remocon.signal('#search')
+  // })
+
+  setCIDBtn.addEventListener('click', e=>{
+    remocon.signal('go@set_reply_tag', remocon.cid )
+  })
+
+  let remocon;
+
+  let remoteCID = "NOP"
+
+  function authRemoconDevice( wsURL, id, key ){
+    remocon = new Remocon( wsURL )
+    remocon.auth( id, key )
+    remocon.on('ready',e=>{
+      console.log('view remocon ready. cid: ', remocon.cid )
+    //   console.log('set_reply_tag:', remoteCID + '@set_reply_tag' )
+    // remocon.signal( remoteCID + '@set_reply_tag', remocon.cid )
+
+    })
+
+    remocon.on('authorized',e=>{
+      console.log('view remocon authorized' )
+    })
+
+    // remocon.listen('#notify', cid=>{
+    //   console.log('view recv #notify device cid:', cid)
+    // })
+
+    remocon.listen('@', (...args)=>{
+      console.log( 'view1@', args )
+      if(keyEvent.textContent.length > 10)
+        keyEvent.textContent = args[0]
+      else keyEvent.textContent += args[0]
+      
+    })
+
+
+  }
+
+</script>
+</html>

@@ -1,0 +1,16 @@
+body{
+  margin:0;
+  font-size: 1.2em;
+  /* margin: 10px; */
+  color: rgb(24, 18, 29);
+  background-color: rgb(163, 149, 148);    
+}
+
+img{
+  width: 100%;
+}
+
+button{
+  padding: 20px;
+  margin: 20px;
+}

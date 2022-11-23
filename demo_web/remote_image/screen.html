@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./screen.css">
+    <title>Remote Screen</title>
+</head>
+
+<body>
+  <h2>screen</h2>
+  <p>multi screen: 
+    <a href="./screen.html#2" target="_blank">#2</a>
+    <a href="./screen.html#3" target="_blank">#3</a>
+    <a href="./screen.html#4" target="_blank">#4</a>
+   </p>
+  <p>controller: <a href="./remote.html#1" target="_blank">remote</a> </p>
+    <img src="1.jpeg" alt="" srcset=""> 
+    <script src="../../dist/remote-signal.min.js?v=1"></script>
+    <script>
+
+    let deviceInfo = {
+      '#1': {id: 'view1', key: 'view1'}, 
+      '#2': {id: 'view2', key: 'view2'}, 
+      '#3': {id: 'view3', key: 'view3'}
+    }
+
+
+
+   let wsURL = "";
+   if(document.location.host.includes('localhost')){
+      wsURL = 'ws://localhost:7777'
+    }else{
+      wsURL = 'wss://' + document.location.host +'/ws'
+    }
+
+    let remocon = new Remocon(wsURL )
+    // globalThis.remocon = remocon 
+    // remocon.encMode = 0;
+    // remocon.autoLogin = false;
+
+    let dev ,devId, devKey
+    if(  dev = deviceInfo[ document.location.hash ] ){
+      devId = dev.id;
+      devKey = dev.key;
+
+      remocon.auth( devId, devKey)
+      
+    }else{
+      // remocon.auth( 'view1', 'view1')
+      // console.log('no device info')
+    }
+    
+        
+
+        let body = document.querySelector('body')
+
+        remocon.listen('#control',( ...args)=>{
+            console.log( args )     
+            // window.location.reload();
+            if( args[0] === 'color') body.style.backgroundColor = args[1]
+            if( args[0] === 'reload') window.location.reload();
+            if( args[0] === 'refresh') refreshCSS();
+            if( args[0] === 'hue') {
+                let deg = args[1]
+                console.log('deg',deg)
+              let img = document.querySelector('img')
+                img.style = 'filter:hue-rotate('+ deg + 'deg)'
+                
+            }
+            if( args[0] === 'img'){
+                let img = document.querySelector('img')
+                console.log(img)
+                if( !img){
+                    img =  document.createElement('img')
+                    body.prepend(img)
+                }
+                img.style = 'filter:hue-rotate(45deg)'
+                img.src = args[1]+'.jpeg'
+                window.img = img
+            }
+            
+        })
+        remocon.listen('#midi',(  ...args)=>{
+            console.log( args)     
+            let k = args[0][1]
+            let val = args[0][2]
+            let img = document.querySelector('img')
+
+            if( k === 70) {
+                let deg = val * 3
+                console.log('deg',deg)
+              
+                if(img){
+                    img.style = 'filter:hue-rotate('+ deg + 'deg)'
+                }
+            }
+
+            if( k === 71) {
+                let deg = parseInt( val / 10)
+                console.log('deg',deg)
+                if(img){
+                    img.style = 'filter:blur('+ deg + 'px)'
+                }
+            }
+
+            if( k === 72) { 
+                let deg = ( val / 50)
+                console.log('deg',deg)
+                if(img){
+                    img.style = 'filter:brightness('+ deg + ')'
+                }
+            }
+            if( k === 73) { //sepia
+                let deg = ( val / 120)
+                console.log('deg',deg)
+                if(img){
+                    img.style = 'filter:sepia('+ deg + ')'
+                }
+            }
+           
+        })
+   
+        //broacasting signal using channel
+        remocon.listen('#image', imageReceiveHandler )
+        //direct signal using id
+        remocon.listen('@image', imageReceiveHandler )
+
+        remocon.listen('@hue', hue=>{
+          console.log( '@hue', hue)
+          let img = document.querySelector('img')
+          img.style = 'filter:hue-rotate('+ hue + 'deg)'
+        } )
+
+        remocon.listen('@', (...args)=>{
+          console.log( '@', args)
+        } )
+
+        document.querySelector('img').addEventListener( 'click', e=>{
+          remocon.signal('go','photo') //현재 5글자면 됨.
+          console.log('take a photo')
+        })
+
+
+        function cryptoImageReceiveHandler( ...args ){
+  
+            console.log('receive #cryptoImage' , args[0].byteLength )     
+            globalThis.encImage = args[0]
+            globalThis.decImageObj = remocon.boho.decryptPack(args[0])
+            if(decImageObj){
+              console.log(decImageObj)
+              let file = new Blob([ decImageObj.data ])
+              var imgURL = URL.createObjectURL(file)
+              let img = document.querySelector('img')
+              // console.log(img)
+              if( !img){
+                  img =  document.createElement('img')
+                  body.prepend(img)
+              }
+              img.src = imgURL
+            }else{
+              console.log('decode fail.')
+            }
+        
+        }
+
+        function imageReceiveHandler( ...args ){
+  
+            console.log('receive #image' , args[0].byteLength )     
+            let file = new Blob([ args[0] ])
+            var imgURL = URL.createObjectURL(file)
+            // console.log( imgURL )
+            // document.body.style.backgroundImage = 'url('+imgURL + ')'
+
+            let img = document.querySelector('img')
+                // console.log(img)
+                if( !img){
+                    img =  document.createElement('img')
+                    body.prepend(img)
+                    // img.style.hueRotate(84deg)
+                }
+            img.src = imgURL
+        
+        
+        }
+
+        //when open
+        remocon.listen('#search', ( id )=>{
+          console.log('req from:', id )
+            remocon.signal(id +"@screen_id",  remocon.cid  )
+        })
+
+
+        remocon.on('ready', (  )=>{
+          console.log('ready', remocon.cid )
+            remocon.signal("#notify",  remocon.cid  )
+
+        })
+
+
+        function refreshCSS() {
+				var sheets = [].slice.call(document.getElementsByTagName("link"));
+				var head = document.getElementsByTagName("head")[0];
+				for (var i = 0; i < sheets.length; ++i) {
+					var elem = sheets[i];
+					var parent = elem.parentElement || head;
+					parent.removeChild(elem);
+					var rel = elem.rel;
+					if (elem.href && typeof rel != "string" || rel.length == 0 || rel.toLowerCase() == "stylesheet") {
+						var url = elem.href.replace(/(&|\?)_cacheOverride=\d+/, '');
+						elem.href = url + (url.indexOf('?') >= 0 ? '&' : '?') + '_cacheOverride=' + (new Date().valueOf());
+					}
+					parent.appendChild(elem);
+				}
+			}
+    </script>
+</body>
+</html>

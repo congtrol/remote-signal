@@ -10574,4 +10574,4 @@ class AuthFile extends AuthCore{
 
 }
 
-export { AuthCore, AuthFile, ENC_MODE, Meta, PAYLOAD_TYPE, RemoconWS as Remocon, RemoconMsg, RemoconOptions, RemoconServer, RemoconTCP, SIZE_LIMIT, TCP_PORT, WS_PORT, timeStamp };
+export { AuthCore, AuthFile, ENC_MODE, Meta, PAYLOAD_TYPE, RemoconWS as Remocon, RemoconMsg, RemoconOptions, RemoconServer, RemoconTCP, SIZE_LIMIT, TCP_PORT, WS_PORT, o as sha256, timeStamp };
