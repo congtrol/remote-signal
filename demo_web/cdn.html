@@ -7,10 +7,32 @@
   <title>CDN load</title>
 </head>
 <body>
-  <p>load remote-siganl from cdn.</p>
+  <p>load remote-signal from cdn.</p>
   <script src="https://cdn.jsdelivr.net/npm/remote-signal@0.0.7/dist/remote-signal.min.js"></script>
   <script>
     console.log( Remote )
+    let remote1 = new Remote('ws://localhost:7777')
+
+    // classic version.
+    remote1.on('ready', e=>{
+      remote1.subscribe('#home_channel')
+      remote1.on('#home_channel', (...args )=>{
+        console.log( 'message:', args[0], 'tag:', args[1])
+      })
+    })
+      
+    // or simple version.
+    remote1.listen('#home_channel2', (...args )=>{
+      console.log( 'message:', args[0], 'tag:', args[1])
+    })
+      
+
+    let remote2 = new Remote('ws://localhost:7777')
+    remote2.on('ready',e=>{
+      remote2.signal('#home_channel', 'hello! I am remote1.')
+      remote2.signal('#home_channel2', 'hello! I am remote1.')
+    })
+
   </script>
 </body>
 </html>
