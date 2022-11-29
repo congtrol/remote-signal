@@ -9,7 +9,7 @@
     "require": "./dist/remote-signal.cjs"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node ./test-browser/remote-server.js"
   },
   "repository": {
     "type": "git",
@@ -29,7 +29,7 @@
   },
   "homepage": "https://github.com/congtrol/remote-signal#readme",
   "dependencies": {
-    "boho": "^0.1.0",
+    "boho": "^0.2.0",
     "eventemitter3": "^4.0.7",
     "meta-buffer-pack": "^1.3.0",
     "ws": "^8.8.0"

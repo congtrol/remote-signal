@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <p>this index.html load two types of modules. </p>
+  <h1>1. IIFE: remote-signal.min.js</h1>
+  <p>use global name:  Remote </p>
+  <p>Remote has props: Boho, MBP, Buffer,, </p>
+  <h1>2. ESM: remote-signal.esm.js</h1>
+  <p> check the console.</p>
+  <script src="../dist/remote-signal.min.js"></script>
+  <script>
+    console.log('IIFE:')
+    console.log('Remote', Remote)
+    console.log('MBP', Remote.MBP )
+    console.log('Buffer', Remote.Buffer)
+    console.log('Boho', Remote.Boho )
+    console.log('sha256.hash("hi")',  Remote.Boho.sha256.hash('hi'))
+
+    var esRemote ;
+    var remote = new Remote('ws://localhost:7777')
+
+    remote.listen('io', msg =>{
+      console.log('sub_io_handler event:', msg )
+    })
+    remote.signal('io', 'pubdata')    
+
+    remote.listen('multi#ev', (...args ) =>{
+      console.log('multi event args:', args )
+    })
+    remote.signal('multi#ev', 'a', 2 , {key: 3})    
+
+  </script>
+  <script type="module">
+    import { Remote, Boho, MBP, Buffer, sha256  } from "../dist/remote-signal.esm.js"
+    esRemote = Remote 
+    console.log('ESM:')
+    console.log('Remote', Remote)
+    console.log('Boho', Boho )
+    console.log('MBP', MBP )
+    console.log('Buffer', Buffer)
+    console.log('sha256.hash("hi")',  sha256.hash('hi'))
+  </script>
+</body>
+</html>

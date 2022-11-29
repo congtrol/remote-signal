@@ -4,18 +4,17 @@
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CDN load</title>
+  <title>simple remote client</title>
 </head>
 <body>
   <h1>simple remote client.</h1>
-  <p>remote-siganl library will be loading from CDN</p>
+  <p>remote-signal library will be loading from CDN</p>
   <ol>
     <li>start server</li>
     <li>load this page. then show the console</li>
   </ol>
-  <script src="https://cdn.jsdelivr.net/npm/remote-signal@0.0.7/dist/remote-signal.min.js"></script>
+  <script src="../dist/remote-signal.min.js"></script>
   <script>
-    console.log( Remote )
     let remote1 = new Remote('ws://localhost:7777')
 
     // classic version.
